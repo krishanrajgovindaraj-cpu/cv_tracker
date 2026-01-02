@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ozellar Marine CV Tracker</title>
+  <style>
+    body { font-family: Arial; margin: 30px; background-color: #f9f9f9; }
+    h1 { color: orange; text-align: center; }
+    h2 { text-align: center; }
+    label { display: block; margin-top: 15px; }
+    input[type="text"], input[type="file"], input[type="date"] { width: 300px; padding: 5px; margin-top: 5px; }
+    button { margin-top: 20px; padding: 5px 10px; cursor: pointer; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #000; padding: 5px; text-align: left; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .deleteBtn { background-color: red; color: white; border: none; padding: 3px 8px; cursor: pointer; }
+    .editBtn { background-color: green; color: white; border: none; padding: 3px 8px; cursor: pointer; margin-right: 5px; }
+    #totalCount { text-align: center; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<h1>Ozellar Marine</h1>
+<h2>CV Tracker</h2>
+
+<label>Name1: <input type="text" id="name" placeholder="Enter full name"></label>
+<label>Rank: <input type="text" id="rank" placeholder="Enter rank"></label>
+<label>Email: <input type="text" id="email" placeholder="Enter email"> Contact Number: <input type="text" id="number" placeholder="Enter contact number"></label>
+<label>CV Collecting Date: <input type="date" id="cvDate"> Remarks: <input type="text" id="remarks" placeholder="Any remarks"></label>
+<label for="cvUpload">Upload CV / Outlook Mail:</label>
+<input type="file" id="cvUpload" accept=".pdf,.doc,.docx,.eml">
+
+<button id="submitBtn">Submit</button>
+<button id="exportBtn">Export to Excel</button>
+
+<h3 id="totalCount">Total CVs: 0</h3>
+
+<table id="cvTable">
+  <thead>
+    <tr>
+      <th>Sr.No</th>
+      <th>Name</th>
+      <th>Rank</th>
+      <th>Email</th>
+      <th>Contact Number</th>
+      <th>CV Collecting Date</th>
+      <th>Remarks</th>
+      <th>CV / Mail</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody id="cvTableBody"></tbody>
+</table>
+
+<script>
+let cvList = JSON.parse(localStorage.getItem("cvList") || "[]");
+let editIndex = null;
+
+// ------------------ DISPLAY ------------------
+function displayCVList() {
+  const tbody = document.getElementById("cvTableBody");
+  tbody.innerHTML = "";
+  cvList.forEach((cv, index) => {
+    const fileLink = cv.fileURL 
+      ? `<a href="${cv.fileURL}" download="${cv.name}${cv.extension ? '.' + cv.extension : ''}">${cv.extension === "eml" ? "View Mail" : "Download CV"}</a>` 
+      : "No File";
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${cv.name}</td>
+        <td>${cv.rank}</td>
+        <td>${cv.email}</td>
+        <td>${cv.number}</td>
+        <td>${cv.cvDate}</td>
+        <td>${cv.remarks}</td>
+        <td>${fileLink}</td>
+        <td>
+          <button class="editBtn" onclick="editEntry(${index})">Edit</button>
+          <button class="deleteBtn" onclick="deleteEntry(${index})">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("totalCount").textContent = `Total CVs: ${cvList.length}`;
+}
+
+// ------------------ RESET FORM ------------------
+function resetForm() {
+  document.getElementById("name").value = "";
+  document.getElementById("rank").value = "";
+  document.getElementById("email").value = "";
+  document.getElementById("number").value = "";
+  document.getElementById("cvDate").value = "";
+  document.getElementById("remarks").value = "";
+  document.getElementById("cvUpload").value = "";
+  editIndex = null;
+  document.getElementById("submitBtn").textContent = "Submit";
+}
+
+// ------------------ DELETE ------------------
+function deleteEntry(index) {
+  if(confirm("Are you sure you want to delete this entry?")) {
+    cvList.splice(index, 1);
+    localStorage.setItem("cvList", JSON.stringify(cvList));
+    displayCVList();
+    resetForm();
+  }
+}
+
+// ------------------ EDIT ------------------
+function editEntry(index) {
+  const cv = cvList[index];
+  document.getElementById("name").value = cv.name;
+  document.getElementById("rank").value = cv.rank;
+  document.getElementById("email").value = cv.email;
+  document.getElementById("number").value = cv.number;
+  document.getElementById("cvDate").value = cv.cvDate;
+  document.getElementById("remarks").value = cv.remarks;
+  editIndex = index;
+  document.getElementById("submitBtn").textContent = "Save Changes";
+}
+
+// ------------------ SUBMIT ------------------
+document.getElementById("submitBtn").addEventListener("click", function() {
+  const name = document.getElementById("name").value.trim();
+  const rank = document.getElementById("rank").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const number = document.getElementById("number").value.trim();
+  const cvDate = document.getElementById("cvDate").value.trim();
+  const remarks = document.getElementById("remarks").value.trim();
+  const fileInput = document.getElementById("cvUpload");
+  const file = fileInput.files[0];
+
+  if(!name || !rank || !number){
+    alert("Please fill Name, Rank, and Contact Number");
+    return;
+  }
+
+  function saveEntry(fileURL=null, extension=null){
+    // Duplicate check
+    const duplicate = cvList.some((cv, idx) => cv.number === number && idx !== editIndex);
+    if(duplicate){
+      alert("This contact number already exists!");
+      return;
+    }
+
+    const entry = {
+      name, rank, email, number, cvDate, remarks,
+      fileURL: fileURL || (editIndex !== null ? cvList[editIndex].fileURL : null),
+      extension: extension || (editIndex !== null ? cvList[editIndex].extension : null)
+    };
+
+    if(editIndex !== null){
+      cvList[editIndex] = entry;
+    } else {
+      cvList.push(entry);
+    }
+
+    localStorage.setItem("cvList", JSON.stringify(cvList));
+    displayCVList();
+    resetForm();
+  }
+
+  if(file){
+    const extension = file.name.split('.').pop();
+    const reader = new FileReader();
+    reader.onload = function(e){
+      saveEntry(e.target.result, extension);
+    }
+    reader.readAsDataURL(file);
+  } else {
+    saveEntry(); // No file selected
+  }
+});
+
+// ------------------ EXPORT CSV ------------------
+document.getElementById("exportBtn").addEventListener("click", function(){
+  if(cvList.length === 0){ alert("No data to export!"); return; }
+
+  let csv = "Name,Rank,Email,Contact Number,CV Date,Remarks,File Name\n";
+  cvList.forEach(cv => {
+    const fileName = cv.extension ? `${cv.name}.${cv.extension}` : '';
+    csv += `"${cv.name}","${cv.rank}","${cv.email}","${cv.number}","${cv.cvDate}","${cv.remarks}","${fileName}"\n`;
+  });
+
+  const link = document.createElement("a");
+  link.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+  link.download = "CV_List.csv";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+});
+
+// ------------------ INITIAL DISPLAY ------------------
+displayCVList();
+</script>
+
+</body>
+</html>
