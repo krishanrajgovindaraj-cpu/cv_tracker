@@ -1,8 +1,7 @@
-
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Ozellar Marine CV Tracker </title>
+  <title>Ozellar Marine CV Tracker</title>
   <style>
     body { font-family: Arial; margin: 30px; background-color: #f9f9f9; }
     h1 { color: orange; text-align: center; }
@@ -19,7 +18,7 @@
 </head>
 <body>
 
-<h1>Ozellar</h1>
+<h1>Ozellar Marine</h1>
 <h2>CV Tracker</h2>
 
 <label>Name: <input type="text" id="name" placeholder="Enter full name"></label>
@@ -31,6 +30,7 @@
 
 <button id="submitBtn">Submit</button>
 <button id="exportBtn">Export to Excel</button>
+<button id="clearBtn">Clear All CVs</button>
 
 <h3 id="totalCount">Total CVs: 0</h3>
 
@@ -52,16 +52,26 @@
 </table>
 
 <script>
-let cvList = JSON.parse(localStorage.getItem("cvList") || "[]");
+// ------------------ LOAD DATA ------------------
+let cvList;
+try {
+  cvList = JSON.parse(localStorage.getItem("cvList")) || [];
+} catch(e) {
+  cvList = [];
+}
+
 let editIndex = null;
 
 // ------------------ DISPLAY ------------------
 function displayCVList() {
   const tbody = document.getElementById("cvTableBody");
   tbody.innerHTML = "";
+
   cvList.forEach((cv, index) => {
-    const fileLink = cv.fileURL 
-      ? `<a href="${cv.fileURL}" download="${cv.name}${cv.extension ? '.' + cv.extension : ''}">${cv.extension === "eml" ? "View Mail" : "Download CV"}</a>` 
+    const fileLink = cv.fileURL
+      ? (cv.extension === "eml"
+          ? `<a href="${cv.fileURL}" target="_blank">View Mail</a>`
+          : `<a href="${cv.fileURL}" download="${cv.name}.${cv.extension}">Download CV</a>`)
       : "No File";
 
     tbody.innerHTML += `
@@ -137,6 +147,11 @@ document.getElementById("submitBtn").addEventListener("click", function() {
     return;
   }
 
+  if(email && !/^\S+@\S+\.\S+$/.test(email)){
+    alert("Please enter a valid email address");
+    return;
+  }
+
   function saveEntry(fileURL=null, extension=null){
     // Duplicate check
     const duplicate = cvList.some((cv, idx) => cv.number === number && idx !== editIndex);
@@ -170,7 +185,7 @@ document.getElementById("submitBtn").addEventListener("click", function() {
     }
     reader.readAsDataURL(file);
   } else {
-    saveEntry(); // No file selected
+    saveEntry();
   }
 });
 
@@ -190,6 +205,16 @@ document.getElementById("exportBtn").addEventListener("click", function(){
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+});
+
+// ------------------ CLEAR ALL ------------------
+document.getElementById("clearBtn").addEventListener("click", () => {
+  if(confirm("Are you sure you want to delete all CVs?")) {
+    cvList = [];
+    localStorage.setItem("cvList", JSON.stringify(cvList));
+    displayCVList();
+    resetForm();
+  }
 });
 
 // ------------------ INITIAL DISPLAY ------------------
