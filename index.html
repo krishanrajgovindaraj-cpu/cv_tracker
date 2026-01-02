@@ -7,7 +7,7 @@
     h1 { color: orange; text-align: center; }
     h2 { text-align: center; }
     label { display: block; margin-top: 15px; }
-    input[type="text"], input[type="file"], input[type="date"] { width: 300px; padding: 5px; margin-top: 5px; }
+    input[type="text"], input[type="file"], input[type="date"], select { width: 300px; padding: 5px; margin-top: 5px; }
     button { margin-top: 20px; padding: 5px 10px; cursor: pointer; }
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     th, td { border: 1px solid #000; padding: 5px; text-align: left; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -22,9 +22,34 @@
 <h2>CV Tracker</h2>
 
 <label>Name: <input type="text" id="name" placeholder="Enter full name"></label>
-<label>Rank: <input type="text" id="rank" placeholder="Enter rank"></label>
-<label>Email: <input type="text" id="email" placeholder="Enter email"> Contact Number: <input type="text" id="number" placeholder="Enter contact number"></label>
+
+<label>Rank: 
+  <select id="rank">
+    <option value="">--Select Rank--</option>
+    <option>Master</option>
+    <option>Chief Officer</option>
+    <option>Second Officer</option>
+    <option>Third Officer</option>
+    <option>Deck Cadet</option>
+    <option>Chief Engineer</option>
+    <option>Second Engineer</option>
+    <option>Third Engineer</option>
+    <option>Engine Cadet</option>
+    <option>Ordinary Seaman</option>
+    <option>Tr. OS</option>
+    <option>Wiper</option>
+    <option>Tr. Wiper</option>
+    <option>Bosun</option>
+    <option>Able Seaman</option>
+    <option>Chief Cook</option>
+  </select>
+</label>
+
+<label>Email: <input type="text" id="email" placeholder="Enter email"> 
+Contact Number: <input type="text" id="number" placeholder="Enter contact number"></label>
+
 <label>CV Collecting Date: <input type="date" id="cvDate"> Remarks: <input type="text" id="remarks" placeholder="Any remarks"></label>
+
 <label for="cvUpload">Upload CV / Outlook Mail:</label>
 <input type="file" id="cvUpload" accept=".pdf,.doc,.docx,.eml">
 
@@ -134,7 +159,7 @@ function editEntry(index) {
 // ------------------ SUBMIT ------------------
 document.getElementById("submitBtn").addEventListener("click", function() {
   const name = document.getElementById("name").value.trim();
-  const rank = document.getElementById("rank").value.trim();
+  const rank = document.getElementById("rank").value;
   const email = document.getElementById("email").value.trim();
   const number = document.getElementById("number").value.trim();
   const cvDate = document.getElementById("cvDate").value.trim();
@@ -153,7 +178,6 @@ document.getElementById("submitBtn").addEventListener("click", function() {
   }
 
   function saveEntry(fileURL=null, extension=null){
-    // Duplicate check
     const duplicate = cvList.some((cv, idx) => cv.number === number && idx !== editIndex);
     if(duplicate){
       alert("This contact number already exists!");
